@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # data files
 *.csv
+
+# ipynb data
+.ipynb_checkpoints/*

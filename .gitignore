@@ -43,3 +43,6 @@ vignettes/*.pdf
 
 # ipynb data
 .ipynb_checkpoints/*
+
+# python compile files
+__pycache__/*

@@ -1,6 +1,9 @@
 import datetime as dt
 
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 
 def prep_insitu(insitu):
@@ -94,5 +97,28 @@ if __name__ == '__main__':
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
     insitu = prep_insitu(insitu)
     sat = prep_sat(sat)
-    df = thresh_date_merge(insitu, sat, merge_cols=['comid'], thresh=10)
-    print(len(df))
+    for thresh in range(6):
+        df = thresh_date_merge(
+                insitu,
+                sat,
+                merge_cols=['comid'],
+                thresh=thresh
+        )
+        df = df[["red", "green", "blue", "chlorophyll"]]
+        X_train, X_test, y_train, y_test = train_test_split(
+            df.drop("chlorophyll", axis=1, inplace=False),
+            df["chlorophyll"],
+            test_size=0.33,
+            random_state=42
+        )
+        print(df.dtypes)
+        clf = RandomForestRegressor()
+        clf.fit(
+                X=X_train,
+                y=y_train
+        )
+        print(mean_squared_error(
+            y_true=y_test,
+            y_pred=clf.predict(X_test)
+            )
+        )

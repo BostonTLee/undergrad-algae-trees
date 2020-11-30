@@ -1,9 +1,14 @@
 import datetime as dt
 
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from xgboost import XGBRegressor
+
+
+pd.options.mode.chained_assignment = None
 
 
 def prep_insitu(insitu):
@@ -131,22 +136,30 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
             random_state=42
         )
         model_lookup = {'random_forest': RandomForestRegressor,
-                        'gradient_boost': GradientBoostingRegressor}
+                        'gradient_boost': GradientBoostingRegressor,
+                        'xgboost': XGBRegressor}
         model = model_lookup[model_type]()
         model.fit(X_train, y_train)
-        return mean_squared_error(y_true=y_test, y_pred=model.predict(X_test))
+        y_pred = model.predict(X_test)
+        return mean_squared_error(y_true=y_test, y_pred=y_pred)
 
 
 if __name__ == '__main__':
     insitu = pd.read_csv('complete_in-situ.csv', low_memory=False)
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
     insitu = prep_insitu(insitu)
+
+    log_chloro = np.log(insitu['chlorophyll'])
+    insitu['chlorophyll'] = log_chloro
+    insitu = insitu[np.isfinite(log_chloro)]
+
     sat = prep_sat(sat)
     subsets = [['red', 'green', 'blue'],
-               [],
-               []]
-    for model_type in ['random_forest', 'gradient_boost']:
-        for subset in subsets:
+               ['red', 'green', 'blue', 'nir'],
+               ['red', 'green', 'blue', 'nir', 'aerosol'],
+               ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl']]
+    for model_type in ['random_forest', 'gradient_boost', 'xgboost']:
+        for s, subset in enumerate(subsets):
             for merge_thresh in range(6):
                 mse = experiment(
                     insitu,
@@ -155,4 +168,4 @@ if __name__ == '__main__':
                     subset=subset,
                     merge_thresh=merge_thresh
                 )
-                print(model_type, subset, merge_thresh, mse, sep='\t')
+                print(model_type, s, merge_thresh, np.exp(mse), sep='\t')

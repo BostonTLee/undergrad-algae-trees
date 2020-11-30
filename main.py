@@ -1,7 +1,7 @@
 import datetime as dt
 
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
@@ -92,33 +92,67 @@ def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
     return df
 
 
+def experiment(insitu, sat, model_type='random_forest', subset=None,
+               merge_thresh=1, bloom_thresh=None):
+    """ Run a algae bloom prediction experiment.
+
+    Parameters
+    ----------
+    insitu : dataframe
+    sat : dataframe
+    subset : list of str
+        Subset of predictors to use. If None (default), use all available
+        predictors.
+    model_type : 'random_forest', 'gradient_boost', or 'xgboost'
+        Statistical model to use.
+    merge_thresh : int
+        Time delta, in number of days to allow for merging in-situ
+        data to satellite data.
+    bloom_thresh : int or float
+        If not None, a binary response variable will be used indicating
+        chlorophyll > bloom_thresh.
+
+    Returns
+    -------
+    float
+        MSE on test set.
+    """
+    df = thresh_date_merge(
+        insitu,
+        sat,
+        merge_cols=['comid'],
+        thresh=merge_thresh
+    )
+    if bloom_thresh is None:
+        X_train, X_test, y_train, y_test = train_test_split(
+            df[subset],
+            df['chlorophyll'],
+            test_size=0.33,
+            random_state=42
+        )
+        model_lookup = {'random_forest': RandomForestRegressor,
+                        'gradient_boost': GradientBoostingRegressor}
+        model = model_lookup[model_type]()
+        model.fit(X_train, y_train)
+        return mean_squared_error(y_true=y_test, y_pred=model.predict(X_test))
+
+
 if __name__ == '__main__':
     insitu = pd.read_csv('complete_in-situ.csv', low_memory=False)
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
     insitu = prep_insitu(insitu)
     sat = prep_sat(sat)
-    for thresh in range(6):
-        df = thresh_date_merge(
-                insitu,
-                sat,
-                merge_cols=['comid'],
-                thresh=thresh
-        )
-        df = df[["red", "green", "blue", "chlorophyll"]]
-        X_train, X_test, y_train, y_test = train_test_split(
-            df.drop("chlorophyll", axis=1, inplace=False),
-            df["chlorophyll"],
-            test_size=0.33,
-            random_state=42
-        )
-        print(df.dtypes)
-        clf = RandomForestRegressor()
-        clf.fit(
-                X=X_train,
-                y=y_train
-        )
-        print(mean_squared_error(
-            y_true=y_test,
-            y_pred=clf.predict(X_test)
-            )
-        )
+    subsets = [['red', 'green', 'blue'],
+               [],
+               []]
+    for model_type in ['random_forest', 'gradient_boost']:
+        for subset in subsets:
+            for merge_thresh in range(6):
+                mse = experiment(
+                    insitu,
+                    sat,
+                    model_type=model_type,
+                    subset=subset,
+                    merge_thresh=merge_thresh
+                )
+                print(model_type, subset, merge_thresh, mse, sep='\t')

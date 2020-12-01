@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 
 
@@ -50,7 +51,8 @@ def prep_sat(sat):
     return sat
 
 
-def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
+def thresh_date_merge(left, right, date_col='date',
+                      merge_cols=[], thresh=1, strict=True):
     """ Merge two dataframes, accepting +- some number of days for matches.
 
     Parameters
@@ -66,12 +68,19 @@ def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
     thresh : int
         The difference in days between observations in `left` and observations
         in `right` that is acceptable for matching.
+    strict : bool
+        Whether to prevent observations in `left` from being associated
+        with multiple different observations of `right`.
 
     Returns
     -------
     dataframe
     """
     left = left.copy()
+    left = left \
+        .reset_index(drop=True) \
+        .reset_index() \
+        .rename({'index': 'obs_id'}, axis=1)
     right = right.copy()
     # create a list to hold the individual merge results
     assemble = []
@@ -79,21 +88,21 @@ def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
     merge_keys = [date_col] + merge_cols
     assemble.append(left.merge(right, on=merge_keys))
     for i in range(1, thresh + 1):
-        # add columns to sat that hold the date plus/minus i days
-        right[f'date_plus_{i}'] = right['date'] + dt.timedelta(days=i)
-        right[f'date_minus_{i}'] = right['date'] + dt.timedelta(days=-i)
-        # merge on right date is i days ahead of left date
-        merge_keys_r = [f'date_plus_{i}'] + merge_cols
-        assemble.append(
-            left.merge(right, left_on=merge_keys, right_on=merge_keys_r)
-        )
+        # make copies of the right dataframe
+        right_shifted_fwd = right.copy()
+        right_shifted_bwd = right.copy()
+        # shift date column in copies
+        right_shifted_fwd['date'] = right['date'] + dt.timedelta(days=i)
+        right_shifted_bwd['date'] = right['date'] + dt.timedelta(days=-i)
         # merge on right date is i days behind left date
-        merge_keys_r = [f'date_minus_{i}'] + merge_cols
-        assemble.append(
-            left.merge(right, left_on=merge_keys, right_on=merge_keys_r)
-        )
+        assemble.append(left.merge(right_shifted_fwd, on=merge_keys))
+        # merge on right date is i days ahead of left date
+        assemble.append(left.merge(right_shifted_bwd, on=merge_keys))
     # create a new dataframe from individual merge results
     df = pd.concat(assemble)
+    if strict:
+        df = df.drop_duplicates(subset=['obs_id'])
+    df = df.drop('obs_id', axis=1)
     return df
 
 
@@ -106,8 +115,7 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
     insitu : dataframe
     sat : dataframe
     subset : list of str
-        Subset of predictors to use. If None (default), use all available
-        predictors.
+        Subset of predictors to use.
     model_type : 'random_forest', 'gradient_boost', or 'xgboost'
         Statistical model to use.
     merge_thresh : int
@@ -128,6 +136,22 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
         merge_cols=['comid'],
         thresh=merge_thresh
     )
+    df = df.set_index(['comid', 'date'])
+
+    encoder = OneHotEncoder(drop='first', sparse=False)
+    month_values = df.index.get_level_values(1).month.values.reshape(-1, 1)
+    month_indicators = encoder.fit_transform(month_values)
+    month_indicators = pd.DataFrame(
+        month_indicators,
+        columns=encoder.categories_[0][1:],
+        index=df.index
+    )
+    df = pd.concat([df, month_indicators], axis=1)
+    if 'month' in subset:
+        subset = subset.copy()
+        subset.remove('month')
+        subset += list(encoder.categories_[0][1:])
+
     if bloom_thresh is None:
         X_train, X_test, y_train, y_test = train_test_split(
             df[subset],
@@ -138,13 +162,14 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
         model_lookup = {'random_forest': RandomForestRegressor,
                         'gradient_boost': GradientBoostingRegressor,
                         'xgboost': XGBRegressor}
-        model = model_lookup[model_type]()
+        model = model_lookup[model_type](random_state=42)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         return mean_squared_error(y_true=y_test, y_pred=y_pred)
 
 
-if __name__ == '__main__':
+def run_experiments():
+    """ Run algae bloom experiments with different parameters. """
     insitu = pd.read_csv('complete_in-situ.csv', low_memory=False)
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
     insitu = prep_insitu(insitu)
@@ -157,7 +182,12 @@ if __name__ == '__main__':
     subsets = [['red', 'green', 'blue'],
                ['red', 'green', 'blue', 'nir'],
                ['red', 'green', 'blue', 'nir', 'aerosol'],
-               ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl']]
+               ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl'],
+               ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl',
+                'month'],
+               ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl',
+                'swir1', 'swir2', 'tir1', 'tir2']]
+    output_table = []
     for model_type in ['random_forest', 'gradient_boost', 'xgboost']:
         for s, subset in enumerate(subsets):
             for merge_thresh in range(6):
@@ -166,6 +196,16 @@ if __name__ == '__main__':
                     sat,
                     model_type=model_type,
                     subset=subset,
-                    merge_thresh=merge_thresh
+                    merge_thresh=merge_thresh,
+                    strict=True
                 )
-                print(model_type, s, merge_thresh, np.exp(mse), sep='\t')
+                output_table.append([model_type, s, merge_thresh, np.exp(mse)])
+    output_table = pd.DataFrame(
+        output_table,
+        columns=['model_type', 'subset', 'merge_thresh', 'mse']
+    )
+    return output_table
+
+
+if __name__ == '__main__':
+    print(run_experiments().to_string())

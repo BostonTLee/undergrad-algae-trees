@@ -3,6 +3,45 @@ import datetime as dt
 import pandas as pd
 
 
+def prep_insitu(insitu):
+    """ Prepare insitu data. """
+    insitu.columns = [x.lower() for x in insitu.columns]
+    insitu = insitu[['comid', 'date', 'analyte', 'raw_value']]
+    insitu['date'] = pd.to_datetime(insitu['date'])
+    insitu['analyte'] = insitu['analyte'].str.lower()
+    insitu['analyte'] = insitu['analyte'].apply(
+        lambda x: 'chlorophyll' if 'chloro' in x else 'secchi'
+    )
+    insitu_chloro = insitu[insitu['analyte'] == 'chlorophyll']
+    insitu_secchi = insitu[insitu['analyte'] == 'secchi']
+    insitu_chloro.drop('analyte', axis=1, inplace=True)
+    insitu_secchi.drop('analyte', axis=1, inplace=True)
+    insitu_chloro.rename({'raw_value': 'chlorophyll'}, axis=1, inplace=True)
+    insitu_secchi.rename({'raw_value': 'secchi'}, axis=1, inplace=True)
+    insitu_chloro = insitu_chloro \
+        .groupby(['comid', 'date']) \
+        .mean() \
+        .reset_index()
+    insitu_secchi = insitu_secchi \
+        .groupby(['comid', 'date']) \
+        .mean() \
+        .reset_index()
+    insitu = insitu_chloro.merge(insitu_secchi, how='left')
+    insitu.dropna(subset=['comid', 'date', 'chlorophyll'], inplace=True)
+    return insitu
+
+
+def prep_sat(sat):
+    """ Prepare satellite data. """
+    sat.columns = [x.lower() for x in sat.columns]
+    sat = sat[['comid', 'date', 'red', 'blue', 'green', 'areasqkm', 'distance',
+               'aerosol', 'nir', 'swir1', 'swir2', 'tir1', 'tir2',
+               'pcount_dswe1', 'pcount_dswe3', 'dwl']]
+    sat['date'] = pd.to_datetime(sat['date'])
+    sat = sat.groupby(['comid', 'date']).mean().reset_index()
+    return sat
+
+
 def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
     """ Merge two dataframes, accepting +- some number of days for matches.
 
@@ -53,9 +92,7 @@ def thresh_date_merge(left, right, date_col='date', merge_cols=[], thresh=1):
 if __name__ == '__main__':
     insitu = pd.read_csv('complete_in-situ.csv', low_memory=False)
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
-    insitu.columns = [x.lower() for x in insitu.columns]
-    sat.columns = [x.lower() for x in sat.columns]
-    insitu['date'] = pd.to_datetime(insitu['date'])
-    sat['date'] = pd.to_datetime(sat['date'])
+    insitu = prep_insitu(insitu)
+    sat = prep_sat(sat)
     df = thresh_date_merge(insitu, sat, merge_cols=['comid'], thresh=10)
     print(len(df))

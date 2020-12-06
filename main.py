@@ -3,8 +3,10 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import (cross_val_score,
+                                     RandomizedSearchCV,
+                                     train_test_split)
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 
@@ -106,9 +108,9 @@ def thresh_date_merge(left, right, date_col='date',
     return df
 
 
-def experiment(insitu, sat, model_type='random_forest', subset=None,
-               merge_thresh=1, bloom_thresh=None):
-    """ Run a algae bloom prediction experiment.
+def experiment_dataset(insitu, sat, subset=None,
+                       merge_thresh=1, split='train'):
+    """ Create a dataset for an algae bloom prediction experiment.
 
     Parameters
     ----------
@@ -116,28 +118,24 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
     sat : dataframe
     subset : list of str
         Subset of predictors to use.
-    model_type : 'random_forest', 'gradient_boost', or 'xgboost'
-        Statistical model to use.
     merge_thresh : int
         Time delta, in number of days to allow for merging in-situ
         data to satellite data.
-    bloom_thresh : int or float
-        If not None, a binary response variable will be used indicating
-        chlorophyll > bloom_thresh.
 
     Returns
     -------
-    float
-        MSE on test set.
+    (X, y) : tuple of array
+        Predictor and response data as numpy arrays. Observations are subset
+        to train or test set based on `split`.
     """
     df = thresh_date_merge(
         insitu,
         sat,
         merge_cols=['comid'],
-        thresh=merge_thresh
+        thresh=merge_thresh,
+        strict=True
     )
     df = df.set_index(['comid', 'date'])
-
     encoder = OneHotEncoder(drop='first', sparse=False)
     month_values = df.index.get_level_values(1).month.values.reshape(-1, 1)
     month_indicators = encoder.fit_transform(month_values)
@@ -152,20 +150,38 @@ def experiment(insitu, sat, model_type='random_forest', subset=None,
         subset.remove('month')
         subset += list(encoder.categories_[0][1:])
 
-    if bloom_thresh is None:
-        X_train, X_test, y_train, y_test = train_test_split(
-            df[subset],
-            df['chlorophyll'],
-            test_size=0.33,
-            random_state=42
-        )
-        model_lookup = {'random_forest': RandomForestRegressor,
-                        'gradient_boost': GradientBoostingRegressor,
-                        'xgboost': XGBRegressor}
-        model = model_lookup[model_type](random_state=42)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-        return mean_squared_error(y_true=y_test, y_pred=y_pred)
+    X_train, X_test, y_train, y_test = train_test_split(
+        df[subset],
+        df['chlorophyll'],
+        test_size=0.33,
+        random_state=42
+    )
+    if split == 'train':
+        return X_train, y_train
+    if split == 'test':
+        return X_test, y_test
+    if split == 'complete':
+        return df[subset].values, df['chlorophyll'].values.reshape(-1, 1)
+
+
+def experiment_model(model_type='random_forest'):
+    """ Create a model for an algae bloom prediction experiment.
+
+    Parameters
+    ----------
+    model_type : 'random_forest', 'gradient_boost', or 'xgboost'
+        Statistical model to use.
+
+    Returns
+    -------
+    predictor
+        Model object.
+    """
+    model_lookup = {'random_forest': RandomForestRegressor,
+                    'gradient_boost': GradientBoostingRegressor,
+                    'xgboost': XGBRegressor}
+    model = model_lookup[model_type](random_state=42)
+    return model
 
 
 def run_experiments():
@@ -173,39 +189,101 @@ def run_experiments():
     insitu = pd.read_csv('complete_in-situ.csv', low_memory=False)
     sat = pd.read_csv('larger_landsat.csv', low_memory=False)
     insitu = prep_insitu(insitu)
+    sat = prep_sat(sat)
 
     log_chloro = np.log(insitu['chlorophyll'])
     insitu['chlorophyll'] = log_chloro
     insitu = insitu[np.isfinite(log_chloro)]
 
-    sat = prep_sat(sat)
     subsets = [['red', 'green', 'blue'],
                ['red', 'green', 'blue', 'nir'],
                ['red', 'green', 'blue', 'nir', 'aerosol'],
                ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl'],
                ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl',
-                'month'],
+                'swir1', 'swir2', 'tir1', 'tir2'],
                ['red', 'green', 'blue', 'nir', 'aerosol', 'areasqkm', 'dwl',
-                'swir1', 'swir2', 'tir1', 'tir2']]
+                'swir1', 'swir2', 'tir1', 'tir2', 'month']]
     output_table = []
     for model_type in ['random_forest', 'gradient_boost', 'xgboost']:
         for s, subset in enumerate(subsets):
-            for merge_thresh in range(6):
-                mse = experiment(
+            for merge_thresh in range(0, 11):
+                X_train, y_train = experiment_dataset(
                     insitu,
                     sat,
-                    model_type=model_type,
                     subset=subset,
                     merge_thresh=merge_thresh,
-                    strict=True
+                    split='train'
                 )
-                output_table.append([model_type, s, merge_thresh, np.exp(mse)])
+                model = experiment_model(model_type)
+                cv_mse = cross_val_score(
+                    model,
+                    X_train,
+                    y_train,
+                    scoring='neg_mean_squared_error',
+                    cv=5
+                )
+                mse = np.abs(cv_mse).mean()
+                row = [model_type, s, merge_thresh, np.exp(mse)]
+                output_table.append(row)
     output_table = pd.DataFrame(
         output_table,
         columns=['model_type', 'subset', 'merge_thresh', 'mse']
     )
-    return output_table
+    print(output_table.to_string())
+    output_table.to_csv('results.csv', index=False)
+
+    # evaluate test set error with best model
+    best_experiment = output_table.loc[output_table['mse'].idxmin()]
+    X_train, y_train = experiment_dataset(
+        insitu,
+        sat,
+        subset=subsets[best_experiment['subset']],
+        merge_thresh=best_experiment['merge_thresh'],
+        split='train'
+    )
+    X_test, y_test = experiment_dataset(
+        insitu,
+        sat,
+        subset=subsets[best_experiment['subset']],
+        merge_thresh=best_experiment['merge_thresh'],
+        split='train'
+    )
+    X, y = experiment_dataset(
+        insitu,
+        sat,
+        subset=subsets[best_experiment['subset']],
+        merge_thresh=best_experiment['merge_thresh'],
+        split='train'
+    )
+    best_model = experiment_model(best_experiment['model_type'])
+    best_model.fit(X_train, y_train)
+    y_pred = best_model.predict(X_test)
+    score = np.exp(mean_squared_error(y_train, y_pred))
+    print(f'Best model MSE on test set: {score:.4f}')
+    best_model.fit(X, y)
+    # use the best model to get predictions
+    unobs_X = sat.set_index(['comid', 'date'])
+    encoder = OneHotEncoder(drop='first', sparse=False)
+    month_values = unobs_X \
+        .index.get_level_values(1).month.values.reshape(-1, 1)
+    month_indicators = encoder.fit_transform(month_values)
+    month_indicators = pd.DataFrame(
+        month_indicators,
+        columns=encoder.categories_[0][1:],
+        index=unobs_X.index
+    )
+    unobs_X = pd.concat([unobs_X, month_indicators], axis=1)
+    subset = subsets[best_experiment['subset']].copy()
+    if 'month' in subset:
+        subset.remove('month')
+        subset += list(encoder.categories_[0][1:])
+    unobs_X = unobs_X[subset]
+    y_pred = np.exp(best_model.predict(unobs_X))
+    y_pred = pd.Series(y_pred, index=unobs_X.index)
+    sat_pred = unobs_X.copy()
+    sat_pred['pred_chlorophyll'] = y_pred
+    sat_pred.to_csv('predictions.csv')
 
 
 if __name__ == '__main__':
-    print(run_experiments().to_string())
+    run_experiments()

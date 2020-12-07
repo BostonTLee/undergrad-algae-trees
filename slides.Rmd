@@ -1,0 +1,65 @@
+---
+title: "DSCI 445 - Utilizing Machine Learning for Algae Predictions"
+author: "Dawson Eliasen, Boston Lee, Miles Austin"
+date: "12/7/2020"
+output:
+  slidy_presentation: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tmap)
+library(tmaptools)
+library(USAboundaries)
+library(sf)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Motivation
+
+When looking at the amount of hand-collected (in situ) data, we see that in Colorado only has data for the major municipal water bodies like Horsetooth.
+```{r, eval=F}
+sampled_map <- st_read("sampled_map.csv", geometry_column='geometry')
+states <- us_boundaries()
+st_as_sf("sampled_map")
+co_outline <- states %>%
+  filter(name == 'Colorado') %>%
+  st_transform(2163)
+tmap_mode("plot")
+tm_shape(co_outline) + tm_polygons(alpha=0) +
+tm_shape(sampled_map) + tm_fill("sampled", id="site_name",
+palette=c("red","blue","green")) + tm_layout(frame=F)
+```
+
+![](map.jpeg)
+
+## Monthly
+
+![](HT_Monthly.jpeg){width=1000px}
+
+## Yearly
+
+![](HT_Obs.jpeg){width=1000px}
+
+## The use of remote sensing data
+
+Landsat data can provide us with valuable data that can show us what the conditions of the reservoirs are at any given time. This data, like the blueness or greenness of a reservoir, can help us look at reservoirs that we do not have data for.
+
+![](ht_color_dist.jpeg){width=1000px}
+
+## Climatology by month
+
+We can see that Horsetooth is more green and has higher wavelengths in the summer months.
+This trend is not specific to Horsetooth, as algae blooms will cause this. This trend is why we only care about summer months.
+
+![](HT_Climatology.jpeg){width=1000px}
+
+## What does that mean for the summer months, though?
+
+We can see that over time, during the summer, that Horsetooth is actually becoming more blue. This isn't the case for all reservoirs, as some are actually becoming more green. The greener they are, the more suspected algae is in the water.
+
+![](ht_color_over_time.jpeg){width=1000px}
+
+## 

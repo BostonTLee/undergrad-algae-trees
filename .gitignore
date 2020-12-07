@@ -46,3 +46,6 @@ vignettes/*.pdf
 
 # python compile files
 __pycache__/*
+
+# generated figures
+figures/*.png

@@ -4,9 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import (cross_val_score,
-                                     RandomizedSearchCV,
-                                     train_test_split)
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBRegressor
 

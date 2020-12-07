@@ -44,5 +44,11 @@ vignettes/*.pdf
 # ipynb data
 .ipynb_checkpoints/*
 
+# generated figures
+figures/*
+
 # python compile files
 __pycache__/*
+
+# generated figures
+figures/*.png

@@ -1,0 +1,58 @@
+---
+title: "DSCI 445 - Algal Blooms"
+author: "Dawson Eliasen, Boston Lee, Miles Austin"
+date: "12/7/2020"
+output:
+  pdf_document: default
+---
+
+  Algae blooms are becoming more relevant in today’s world, due to the increasing 
+climate change. Scientific research has shown that algae blooms are happening at
+an increasing frequency, with a higher geographic distribution than we had 
+previously seen, which is especially notable in high elevation reservoirs. Not 
+only are algae blooms occurring more frequently, harmful algal blooms - also 
+known as HABS - are also occurring more frequently.  
+
+
+  Even though algae are natural and part of a healthy freshwater ecosystem, the
+algae can grow to an extent that it can be harmful to the ecosystem – creating 
+anoxic conditions for example, otherwise known as “dead zones” for the aquatic 
+fauna. The HABs can produce toxins that can be harmful to not only the aquatic 
+ecosystem, but to humans and other animals, such as dogs. Both algae blooms and 
+HABs have a wide range of impacts that can not only be local, but they can also
+have interstate impacts. This is especially important to note because Lake Erie,
+in 2014, had a HAB that was incredibly impactful to the local economy and 
+residents. The HAB left half-a-million people without clean water to drink and 
+roughly $65 million in economic losses over a two day span of time.
+            
+  With the increasing use of reservoirs for municipalities, the quality of the 
+water is very important. Although the water gets treated before it gets to the 
+tap, the quality of the water as it reaches the water treatment plant is very 
+important regarding the cost to treat the water for municipal use, and algal 
+blooms impact the quality of the water dramatically. Most municipal water is 
+monitored, but not all of the data is publicly available and some isn’t 
+monitored in situ - otherwise known as collected by hand. However, Landsat is a
+series of satellites that image the Earth surface, in repeated intervals of 14 
+days; that is to say Fort Collins gets re-imaged every 14 days. Landsat 5 dates
+back to 1984, and is no longer taking images, while landsat 7 (1999) and landsat
+8 (2013) still record images today. The landsat imagery allows for a larger 
+sample of data to look at the trends of algal blooms in Colorado, in comparison 
+to the lack of public in situ data available. Figure 1 shows reservoirs - only 
+those greater than 0.01 km² -  that have both in situ and satellite imagery in 
+blue, while the reservoirs in red indicate the reservoirs with just the landsat 
+imagery available. It is easy to see the lack of reservoir data we have 
+available to us, which is why utilizing machine learning to try and predict 
+algae blooms from just remotely sensed imagery would be an incredibly useful
+method of determining water quality in reservoirs. 
+
+
+Methods:
+How we got the data
++/- day merge
+Tried 3 models
+Tried 5 variables
+Tried day threshold
+Train/test split? (⅓ was held out)
+Experimental variables were compared using 5-fold cross validation
+
+Results:

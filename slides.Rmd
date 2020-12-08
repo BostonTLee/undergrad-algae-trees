@@ -3,51 +3,44 @@ title: "DSCI 445 - Utilizing Machine Learning for Algae Predictions"
 author: "Dawson Eliasen, Boston Lee, Miles Austin"
 date: "12/7/2020"
 output:
+  beamer_presentation: default
   slidy_presentation: default
 editor_options:
   chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(tmap)
-library(tmaptools)
-library(USAboundaries)
-library(sf)
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup, echo=FALSE}
+library(knitr)
+opts_chunk$set(engine.path='venv/bin/python3')
+```
+
+```{python, include=FALSE}
+from plots import *
 ```
 
 ## Motivation
 
 When looking at the amount of hand-collected (in situ) data, we see that in Colorado only has data for the major municipal water bodies like Horsetooth.
-```{r, eval=F}
-sampled_map <- st_read("sampled_map.csv", geometry_column='geometry')
-states <- us_boundaries()
-st_as_sf("sampled_map")
-co_outline <- states %>%
-  filter(name == 'Colorado') %>%
-  st_transform(2163)
-tmap_mode("plot")
-tm_shape(co_outline) + tm_polygons(alpha=0) +
-tm_shape(sampled_map) + tm_fill("sampled", id="site_name",
-palette=c("red","blue","green")) + tm_layout(frame=F)
-```
 
 ![](map.jpeg)
+
 
 ## Monthly
 
 ![](HT_Monthly.jpeg){width=1000px}
 
+
 ## Yearly
 
 ![](HT_Obs.jpeg){width=1000px}
+
 
 ## The use of remote sensing data
 
 Landsat data can provide us with valuable data that can show us what the conditions of the reservoirs are at any given time. This data, like the blueness or greenness of a reservoir, can help us look at reservoirs that we do not have data for.
 
 ![](ht_color_dist.jpeg){width=1000px}
+
 
 ## Climatology by month
 
@@ -56,10 +49,59 @@ This trend is not specific to Horsetooth, as algae blooms will cause this. This 
 
 ![](HT_Climatology.jpeg){width=1000px}
 
+
 ## What does that mean for the summer months, though?
 
 We can see that over time, during the summer, that Horsetooth is actually becoming more blue. This isn't the case for all reservoirs, as some are actually becoming more green. The greener they are, the more suspected algae is in the water.
 
 ![](ht_color_over_time.jpeg){width=1000px}
 
-## 
+
+## Methodology
+
+```{python, echo=FALSE}
+plot_histograms()
+```
+
+
+## Random forest feature importance
+
+- We were surprised to see `areasqkm` as the most important feature
+- `dwl` as the second most important feature makes sense
+
+```{python, echo=FALSE}
+plot_feature_importance()
+```
+
+
+## How does the feature subset affect performance?
+
+- Different models behave similarly
+- Adding in `areasqkm` resulted in the biggest performance increase
+
+```{python, echo=FALSE}
+plot_subset_performance()
+```
+
+
+## How does the merge threshold affect performance?
+
+- Different models behave similarly
+- Interestingly, a merge threshold of 1 is worse than 0 and 2
+
+```{python, echo=FALSE}
+plot_thresh_performance()
+```
+
+
+## Results summary
+
+- Our best model was a random forest with a merge threshold of 3 days and included all available features
+- Our best model received a CV MSE of about 1.75 and a test set MSE of about 1.09
+
+
+## Predicted values
+
+```{python, echo=FALSE}
+plot_predicted_values()
+```

@@ -13,55 +13,61 @@ opts_chunk$set(engine.path='venv/bin/python3')
 
 ```{python, include=FALSE}
 from plots import *
-=======
-```{r setup, include=FALSE}
-library(tidyverse)
-library(tmap)
-library(tmaptools)
-library(USAboundaries)
-library(sf)
-knitr::opts_chunk$set(echo = FALSE)
->>>>>>> Stashed changes
 ```
 
 ## Motivation
 
-When looking at the amount of hand-collected (in situ) data, we see that in Colorado only has data for the major municipal water bodies like Horsetooth.
+When looking at the amount of hand-collected (in situ) data, we see that in
+Colorado only has data for the major municipal water bodies like Horsetooth.
 
 ![](map.jpeg)
 
-
+  
 ## Monthly
 
-![](HT_Monthly.jpeg){width=1000px}
+![](HT_Monthly.jpeg)
 
 
 ## Yearly
 
-![](HT_Obs.jpeg){width=1000px}
+![](HT_Obs.jpeg)
 
 
 ## The use of remote sensing data
 
-Landsat data can provide us with valuable data that can show us what the conditions of the reservoirs are at any given time. This data, like the blueness or greenness of a reservoir, can help us look at reservoirs that we do not have data for.
+Landsat data can provide us with valuable data that can show us what the
+conditions of the reservoirs are at any given time. This data, like the
+blueness or greenness of a reservoir, can help us look at reservoirs that we do
+not have data for.
 
-![](ht_color_dist.jpeg){width=1000px}
+![](ht_color_dist.jpeg)
 
 
 ## Climatology by month
 
-We can see that Horsetooth is more green and has higher wavelengths in the summer months.
-This trend is not specific to Horsetooth, as algae blooms will cause this. This trend is why we only care about summer months.
+We can see that Horsetooth is more green and has higher wavelengths in the
+summer months. This trend is why we only care about summer months.
 
-![](HT_Climatology.jpeg){width=1000px}
+![](HT_Climatology.jpeg)
 
 
-## What does that mean for the summer months, though?
+## Summer Months
 
-We can see that over time, during the summer, that Horsetooth is actually becoming more blue. This isn't the case for all reservoirs, as some are actually becoming more green. The greener they are, the more suspected algae is in the water.
+We can see that over time, during the summer, that Horsetooth is actually
+becoming more blue. This isn't the case for all reservoirs, as some are
+actually becoming more green. The greener they are, the more suspected algae is
+in the water.
 
-![](ht_color_over_time.jpeg){width=1000px}
+![](ht_color_over_time.jpeg)
 
+## Summer Months
+
+- Over time, during the summer, Horsetooth is becoming more blue. 
+- This is not the case for all reservoirs; some are actually becoming more
+  green. 
+- The greener they are, the more suspected algae is in the water.
+
+![](ht_color_over_time.jpeg)
 
 ## Methodology
 
@@ -71,8 +77,10 @@ plot_histograms()
 
 ## Algorithm Choice
 
-- The algae bloom data is spatiotemporal: We have measurements that are potentially correlated over geographic space, that are taken over time
-- This means we cannot use any regression-based methods. Assumptions about uncorrelated errors are violated.
+- The algae bloom data is spatiotemporal: We have measurements that are
+  potentially correlated over geographic space, that are taken over time
+- This means we cannot use any regression-based methods. Assumptions about
+  uncorrelated errors are violated.
 - Solution: Non-parametric algorithms
 
 ## Algorithm Choice, Cont.
@@ -93,10 +101,13 @@ Where $F(y_i, F(x_i))$ is a measure of how **wrong** $F(x_i)$ is in predicting $
 
 ## Gradient Boosted Trees, cont.
 
-- We can interpret residuals as the **negative gradient** of the total loss defined before.
-- Like AdaBoost, we update the prediction function, but now, we update $F(\cdot)$ based on the negative gradient of our total loss.
-- This algorithm can handle different loss functions, with different properties, making it very flexible.
-- Here, we use the default implementation in `scikit-learn`, which has a least-squares loss function:
+- We can interpret residuals as the **negative gradient** of the total loss
+  defined before.
+- Update $F(\cdot)$ based on the negative gradient of our total loss.
+- This algorithm can handle different loss functions, with different
+  properties, making it very flexible.
+- Here, we use the default implementation in `scikit-learn`, which has a
+  least-squares loss function:
 
 $$L(y_i, F(x_i)) = (y_i = F(x_i))^2$$
 

@@ -4,9 +4,6 @@ author: "Dawson Eliasen, Boston Lee, Miles Austin"
 date: "12/7/2020"
 output:
   beamer_presentation: default
-  slidy_presentation: default
-editor_options:
-  chunk_output_type: console
 ---
 
 ```{r setup, echo=FALSE}
@@ -16,6 +13,15 @@ opts_chunk$set(engine.path='venv/bin/python3')
 
 ```{python, include=FALSE}
 from plots import *
+=======
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tmap)
+library(tmaptools)
+library(USAboundaries)
+library(sf)
+knitr::opts_chunk$set(echo = FALSE)
+>>>>>>> Stashed changes
 ```
 
 ## Motivation
@@ -62,6 +68,37 @@ We can see that over time, during the summer, that Horsetooth is actually becomi
 ```{python, echo=FALSE}
 plot_histograms()
 ```
+
+## Algorithm Choice
+
+- The algae bloom data is spatiotemporal: We have measurements that are potentially correlated over geographic space, that are taken over time
+- This means we cannot use any regression-based methods. Assumptions about uncorrelated errors are violated.
+- Solution: Non-parametric algorithms
+
+## Algorithm Choice, Cont.
+
+- We chose two non-parametric algorithms:
+  - Random Forest
+  - Gradient Boosting
+  
+## Gradient Boosted Trees
+
+- Given a differentiable loss function $L(\cdot)$, we want to **minimize** the total loss for points in the test set:
+
+$$\sum_{i = 1}^{n} L(y_i, F(x_i))$$
+
+Where $F(y_i, F(x_i))$ is a measure of how **wrong** $F(x_i)$ is in predicting $y_i$.
+
+- This leads to an optimization problem, which (because of differentiability) can be solved by gradient descent.
+
+## Gradient Boosted Trees, cont.
+
+- We can interpret residuals as the **negative gradient** of the total loss defined before.
+- Like AdaBoost, we update the prediction function, but now, we update $F(\cdot)$ based on the negative gradient of our total loss.
+- This algorithm can handle different loss functions, with different properties, making it very flexible.
+- Here, we use the default implementation in `scikit-learn`, which has a least-squares loss function:
+
+$$L(y_i, F(x_i)) = (y_i = F(x_i))^2$$
 
 
 ## Random forest feature importance

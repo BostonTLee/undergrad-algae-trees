@@ -11,6 +11,10 @@ library(knitr)
 opts_chunk$set(engine.path='venv/bin/python3')
 ```
 
+```{python, include=FALSE}
+from plots import *
+```
+
 # Background
 
   Algae blooms are becoming more relevant in today’s world, due to the increasing 
@@ -55,14 +59,10 @@ method of determining water quality in reservoirs.
 
 # Methods
 
-## Methods TODO:
+TODO:
 How we got the data
 
-## Variable Selection
-
-
-
-## Data Manipulation
+## Data Interpolation (Merging Shift Threshold)
 
 Tried 5 variables
 +/- day merge
@@ -82,8 +82,24 @@ model was fit using data shifted from one to ten days in either direction, and
 the cross-validation error was used to assess model accuracy. The specifics of
 the experimental structure are described below. The model accuracy provided a
 picture of the quality of interpolation provided by each shift. If data was
-shifted too many days, the prediction accuracy of the algorithm would
-deteriorate. FIXME mention optimal shift and include graph.
+shifted too many days, the prediction accuracy of the algorithm should
+deteriorate.
+
+## Response Variable Transformation
+
+As can be seen from Figure \ref{fig:resp-hist}, the chlorophyll variable, the response
+variable in this case, was initially highly skewed. This had an impact on
+initial prediction accuracy. In order to correct for the skewed nature of the
+data, the response was log-transformed, yielding the second distribution in
+Figure \ref{fig:resp-hist}.
+
+```{python, echo=FALSE, fig.cap="Distribution of chlorophyll before and after log transformation.\\label{fig:resp-hist}"}
+plot_histograms()
+```
+
+It should be noted that all MSE values were calculated from chlorophyll on the
+log-transformed scale, then exponentiated to account for the variable
+transformation.
 
 ## Models
 
@@ -92,7 +108,7 @@ geographic location at a certain time. This makes the class of linear models
 unsuitable for this problem. Linear models make assumptions about the structure
 of the errors in the data generating process that are violated by spatiotemporal
 data. Spatiotemporal data has errors which are correlated; as observations
-closer in space or time will covary(CITE). 
+closer in space or time will covary (CITE). 
 
 To work around the issue of violated assumptions in classical statistical
 models, we opted to use three variants of non-parametric, tree based regression
@@ -108,3 +124,30 @@ Train/test split? ($\frac{1}{3}$ was held out)
 Experimental variables were compared using 5-fold cross validation
 
 # Results
+
+## Merge Shifting Threshold
+
+Comparing across different shifting thresholds, all three models included in
+the experiment performed similarly. 
+
+```{python, echo=FALSE, fig.cap="Cross-validation error for all three models at merge thresholds from 1 to 10.\\label{fig:thresh-performance}"}
+plot_thresh_performance()
+```
+
+As we can see from Figure \ref{fig:thresh-performance}, the trend across merge
+thresholds for each model is very similar. As can also be seen in Figure
+\ref{fig:thresh-performance}, the optimal shifting threshold is three
+days \ref{fig:thresh-performance}. It is also interesting to note that a shift of one day performed
+worse than no shift, or a shift of two days. This is a counterintuitive result,
+but it could be due to the tradeoff between the extra volume of data added by
+larger shift thresholds versus the accuracy of the data at lower shifting
+thresholds.
+
+
+## Model Performance
+
+All three models mentioned performed similarly, with no model greatly exceeding
+the other two in terms of CV error. The best overall model, in terms of FIXME
+error, was a random forest with a merge shift threshold of three days, that
+included all features. The best model had a CV MSE of approximately 1.75, and a
+test MSE of approximately 1.09.

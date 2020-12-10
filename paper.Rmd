@@ -17,7 +17,7 @@ from plots import *
 
 # Background
 
-  Algae blooms are becoming more relevant in today’s world, due to the increasing 
+Algae blooms are becoming more relevant in today’s world, due to the increasing 
 climate change. Scientific research has shown that algae blooms are happening at
 an increasing frequency, with a higher geographic distribution than we had 
 previously seen, which is especially notable in high elevation reservoirs. Not 
@@ -25,7 +25,7 @@ only are algae blooms occurring more frequently, harmful algal blooms - also
 known as HABS - are also occurring more frequently.  
 
 
-  Even though algae are natural and part of a healthy freshwater ecosystem, the
+Even though algae are natural and part of a healthy freshwater ecosystem, the
 algae can grow to an extent that it can be harmful to the ecosystem – creating 
 anoxic conditions for example, otherwise known as “dead zones” for the aquatic 
 fauna. The HABs can produce toxins that can be harmful to not only the aquatic 
@@ -36,7 +36,7 @@ in 2014, had a HAB that was incredibly impactful to the local economy and
 residents. The HAB left half-a-million people without clean water to drink and 
 roughly \$65 million in economic losses over a two day span of time.
             
-  With the increasing use of reservoirs for municipalities, the quality of the 
+With the increasing use of reservoirs for municipalities, the quality of the 
 water is very important. Although the water gets treated before it gets to the 
 tap, the quality of the water as it reaches the water treatment plant is very 
 important regarding the cost to treat the water for municipal use, and algal 
@@ -59,8 +59,17 @@ method of determining water quality in reservoirs.
 
 # Methods
 
-TODO:
-How we got the data
+The data came from two sources; satellite data and in situ data from public
+sources. The satellite data was downloaded utilizing Google Earth Engine, which
+downloaded the data for individual lakes, ignoring images that were over a
+threshold of cloud cover. This threshold was because cloud cover would darken
+the pixels, skewing the data. The satellite data included all of Landsat 5, 7,
+and 8 from the past 35 year and has the different band (wavelength) data for the
+center most pixel of each lake. The in situ data includes all public data that
+is available for chlorophyll in Colorado. This includes data from sources like
+Denver Water, the USGS, and Northern Water. The data that is being utilized is
+chlorophyll values, and the data also includes secchi depth (how deep you can
+see into the water).
 
 ## Data Interpolation (Merging Shift Threshold)
 

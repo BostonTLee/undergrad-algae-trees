@@ -1,7 +1,7 @@
 ---
 title: "DSCI 445 - Utilizing Machine Learning for Algae Predictions"
 author: "Dawson Eliasen, Boston Lee, Miles Austin"
-date: "12/7/2020"
+date: "12/11/2020"
 output:
   beamer_presentation: default
 ---
@@ -19,19 +19,25 @@ from plots import *
 
 When looking at the amount of hand-collected (in situ) data, we see that in
 Colorado only has data for the major municipal water bodies like Horsetooth.
-This is why we want to utilize data that was gathered from GEE & all public
-water quality data.
 
-![](images/map.jpeg)
-  
+![](map.jpeg)
+
+## Where did the data come from?
+
+We are utilizing satellite data that was gathered from GEE & all in situ public
+water quality data for Colorado.
+  - The satellite images are collected every 14 days.
+  - In situ data is collected randomly.
+
+
 ## A look at the monthly data
 
-![](images/HT_Monthly.jpeg)
+![](HT_Monthly.jpeg)
 
 
 ## A look at the yearly data
 
-![](images/HT_Obs.jpeg)
+![](HT_Obs.jpeg)
 
 
 ## The use of remote sensing data
@@ -41,7 +47,7 @@ conditions of the reservoirs are at any given time. This data, like the
 blueness or greenness of a reservoir, can help us look at reservoirs that we do
 not have data for.
 
-![](images/ht_color_dist.jpeg)
+![](ht_color_dist.jpeg)
 
 
 ## Climatology by month
@@ -49,17 +55,7 @@ not have data for.
 We can see that Horsetooth is more green and has higher wavelengths in the
 summer months. This trend is why we only care about summer months.
 
-![](images/HT_Climatology.jpeg)
-
-
-## Summer Months
-
-We can see that over time, during the summer, that Horsetooth is actually
-becoming more blue. This isn't the case for all reservoirs, as some are
-actually becoming more green. The greener they are, the more suspected algae is
-in the water.
-
-![](images/ht_color_over_time.jpeg)
+![](HT_Climatology.jpeg)
 
 ## Summer Months
 
@@ -68,7 +64,7 @@ in the water.
   green. 
 - The greener they are, the more suspected algae is in the water.
 
-![](images/ht_color_over_time.jpeg)
+![](ht_color_over_time.jpeg)
 
 ## Methodology
 
@@ -110,7 +106,7 @@ Where $F(y_i, F(x_i))$ is a measure of how **wrong** $F(x_i)$ is in predicting $
 - Here, we use the default implementation in `scikit-learn`, which has a
   least-squares loss function:
 
-$$L(y_i, F(x_i)) = (y_i = F(x_i))^2$$
+$$L(y_i, F(x_i)) = (y_i - F(x_i))^2$$
 
 
 ## Random forest feature importance

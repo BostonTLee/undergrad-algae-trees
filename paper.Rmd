@@ -69,7 +69,7 @@ center most pixel of each lake. The in situ data includes all public data that
 is available for chlorophyll in Colorado. This includes data from sources like
 Denver Water, the USGS, and Northern Water. The data that is being utilized is
 chlorophyll values, and the data also includes secchi depth (how deep you can
-see into the water).
+see into the water). 
 
 ## Data Interpolation (Merging Shift Threshold)
 

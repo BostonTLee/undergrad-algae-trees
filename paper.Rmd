@@ -17,7 +17,7 @@ from plots import *
 
 # Background
 
-  Algae blooms are becoming more relevant in today’s world, due to the increasing 
+Algae blooms are becoming more relevant in today’s world, due to the increasing 
 climate change. Scientific research has shown that algae blooms are happening at
 an increasing frequency, with a higher geographic distribution than we had 
 previously seen, which is especially notable in high elevation reservoirs. Not 
@@ -25,7 +25,7 @@ only are algae blooms occurring more frequently, harmful algal blooms - also
 known as HABS - are also occurring more frequently.  
 
 
-  Even though algae are natural and part of a healthy freshwater ecosystem, the
+Even though algae are natural and part of a healthy freshwater ecosystem, the
 algae can grow to an extent that it can be harmful to the ecosystem – creating 
 anoxic conditions for example, otherwise known as “dead zones” for the aquatic 
 fauna. The HABs can produce toxins that can be harmful to not only the aquatic 
@@ -36,11 +36,11 @@ in 2014, had a HAB that was incredibly impactful to the local economy and
 residents. The HAB left half-a-million people without clean water to drink and 
 roughly \$65 million in economic losses over a two day span of time.
             
-  With the increasing use of reservoirs for municipalities, the quality of the 
+With the increasing use of reservoirs for municipalities, the quality of the 
 water is very important. Although the water gets treated before it gets to the 
 tap, the quality of the water as it reaches the water treatment plant is very 
 important regarding the cost to treat the water for municipal use, and algal 
-blooms impact the quality of the water dramatically. Most municipal water is 
+blooms impact the quality of the water dramatically(Brookes). Most municipal water is 
 monitored, but not all of the data is publicly available and some isn’t 
 monitored in situ - otherwise known as collected by hand. However, Landsat is a
 series of satellites that image the Earth surface, in repeated intervals of 14 
@@ -54,13 +54,24 @@ blue, while the reservoirs in red indicate the reservoirs with just the landsat
 imagery available. It is easy to see the lack of reservoir data we have 
 available to us, which is why utilizing machine learning to try and predict 
 algae blooms from just remotely sensed imagery would be an incredibly useful
-method of determining water quality in reservoirs. 
+method of determining water quality in reservoirs. It has been done previously,
+but mainly utilizing only the blue and green wavelengths, despite there being more
+potential options(Sachidananda).
 
 
 # Methods
 
-TODO:
-How we got the data
+The data came from two sources; satellite data and in situ data from public
+sources. The satellite data was downloaded utilizing Google Earth Engine, which
+downloaded the data for individual lakes, ignoring images that were over a
+threshold of cloud cover. This threshold was because cloud cover would darken
+the pixels, skewing the data. The satellite data included all of Landsat 5, 7,
+and 8 from the past 35 year and has the different band (wavelength) data for the
+center most pixel of each lake. The in situ data includes all public data that
+is available for chlorophyll in Colorado. This includes data from sources like
+Denver Water, the USGS, and Northern Water. The data that is being utilized is
+chlorophyll values, and the data also includes secchi depth (how deep you can
+see into the water). 
 
 ## Data Interpolation (Merging Shift Threshold)
 
@@ -151,3 +162,41 @@ the other two in terms of CV error. The best overall model, in terms of FIXME
 error, was a random forest with a merge shift threshold of three days, that
 included all features. The best model had a CV MSE of approximately 1.75, and a
 test MSE of approximately 1.09.
+
+## Sources
+
+Brezonik, Patrick, Kevin D. Menken, and Marvin Bauer. “Landsat-Based Remote
+Sensing of Lake Water Quality Characteristics, Including Chlorophyll and Colored
+Dissolved Organic Matter (CDOM).” Lake and Reservoir Management 21, no. 4 
+(December 2005): 373–82. https://doi.org/10.1080/07438140509354442.
+
+Brookes, J. D., and C. C. Carey. “Resilience to Blooms.” Science 334, no. 6052 
+(October 7, 2011): 46–47. https://doi.org/10.1126/science.1207349.
+
+Brookes, Justin D., Cayelan C. Carey, David P. Hamilton, Lionel Ho, Leon van der
+Linden, Robert Renner, and Anna Rigosi. “Emerging Challenges for the Drinking 
+Water Industry.” Environmental Science & Technology 48, no. 4 (February 18, 
+2014): 2099–2101. https://doi.org/10.1021/es405606t.
+
+Folke, Carl, Steve Carpenter, Brian Walker, Marten Scheffer, Thomas Elmqvist,
+Lance Gunderson, and C.S. Holling. “Regime Shifts, Resilience, and Biodiversity 
+in Ecosystem Management.” Annual Review of Ecology, Evolution, and Systematics 
+35, no. 1 (December 15, 2004): 557–81. 
+https://doi.org/10.1146/annurev.ecolsys.35.021103.105711.
+
+Ho, Jeff C., Anna M. Michalak, and Nima Pahlevan. “Widespread Global Increase in
+Intense Lake Phytoplankton Blooms since the 1980s.” Nature 574, no. 7780 
+(October 2019): 667–70. https://doi.org/10.1038/s41586-019-1648-7.
+
+Olmanson, Leif G, Marvin E Bauer, and Patrick L Brezonik. “Use of Landsat
+Imagery to Develop a Water Quality Atlas of Minnesota’s 10,000 Lakes.” 
+Conference Proceedings, 2002, 8.
+
+Scheffer, Marten, Steve Carpenter, Jonathan A. Foley, Carl Folke, and Brian 
+Walker. “Catastrophic Shifts in Ecosystems.” Nature 413, no. 6856 (October 2001)
+591–96. https://doi.org/10.1038/35098000.
+
+Torbick, Nathan, Sarah Hession, Stephen Hagen, Narumon Wiangwang, Brian Becker, 
+and Jiaguo Qi. “Mapping Inland Lake Water Quality across the Lower Peninsula of
+Michigan Using Landsat TM Imagery.” International Journal of Remote Sensing 34,
+no. 21 (November 10, 2013): 7607–24. https://doi.org/10.1080/01431161.2013.822602.

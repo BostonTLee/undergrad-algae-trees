@@ -66,12 +66,29 @@ summer months. This trend is why we only care about summer months.
 
 ![](images/ht_color_over_time.jpeg)
 
-## Methodology
+## Merge Threshold
+
+- In-situ and satellite data do not necessarily have matching dates
+- On an inner join, most of the data would be dropped
+- Solution: Shift in-situ data $0, \cdots, n$ days forward and backward
+
+## Response Variable Transformation
+
+Because of extreme skew, the response variable, chlorophyll, was
+log-transformed.
 
 ```{python, echo=FALSE}
 plot_histograms()
 ```
 
+## Model selection
+
+- Final model was selected via 5-fold cross-validation error on a training set.
+- Models were fit over a grid of:
+  1. Model type
+  1. Variable Subset
+  1. Merge Threshold
+  
 ## Algorithm Choice
 
 - The algae bloom data is spatiotemporal: We have measurements that are
@@ -85,24 +102,24 @@ plot_histograms()
 - We chose two non-parametric algorithms:
   - Random Forest
   - Gradient Boosting
+
+![](images/gradient_boosting_simple.png)
+
+Image credit: https://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html
   
 ## Gradient Boosted Trees
 
 - Given a differentiable loss function $L(\cdot)$, we want to **minimize** the total loss for points in the test set:
 
-$$\sum_{i = 1}^{n} L(y_i, F(x_i))$$
+  $$\sum_{i = 1}^{n} L(y_i, F(x_i))$$
 
-Where $F(y_i, F(x_i))$ is a measure of how **wrong** $F(x_i)$ is in predicting $y_i$.
+  Where $F(y_i, F(x_i))$ is a measure of how **wrong** $F(x_i)$ is in predicting $y_i$.
 
 - This leads to an optimization problem, which (because of differentiability) can be solved by gradient descent.
 
 ## Gradient Boosted Trees, cont.
 
-- We can interpret residuals as the **negative gradient** of the total loss
-  defined before.
-- Update $F(\cdot)$ based on the negative gradient of our total loss.
-- This algorithm can handle different loss functions, with different
-  properties, making it very flexible.
+- We can interpret residuals as the **negative gradient** of the total loss.
 - Here, we use the default implementation in `scikit-learn`, which has a
   least-squares loss function:
 

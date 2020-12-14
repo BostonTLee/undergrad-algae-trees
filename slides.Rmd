@@ -20,7 +20,7 @@ from plots import *
 When looking at the amount of hand-collected (in situ) data, we see that in
 Colorado only has data for the major municipal water bodies like Horsetooth.
 
-![](images/map.jpeg)
+![](images/map.jpeg){height=70%}
 
 ## Where did the data come from?
 
@@ -32,12 +32,12 @@ water quality data for Colorado.
 
 ## A look at the monthly data
 
-![](images/HT_Monthly.jpeg)
+![](images/HT_Monthly.jpeg){height=70%}
 
 
 ## A look at the yearly data
 
-![](images/HT_Obs.jpeg)
+![](images/HT_Obs.jpeg){height=70%}
 
 
 ## The use of remote sensing data
@@ -47,7 +47,7 @@ conditions of the reservoirs are at any given time. This data, like the
 blueness or greenness of a reservoir, can help us look at reservoirs that we do
 not have data for.
 
-![](images/ht_color_dist.jpeg)
+![](images/ht_color_dist.jpeg){height=70%}
 
 
 ## Climatology by month
@@ -55,7 +55,7 @@ not have data for.
 We can see that Horsetooth is more green and has higher wavelengths in the
 summer months. This trend is why we only care about summer months.
 
-![](images/HT_Climatology.jpeg)
+![](images/HT_Climatology.jpeg){height=70%}
 
 ## Summer Months
 
@@ -64,7 +64,7 @@ summer months. This trend is why we only care about summer months.
   green. 
 - The greener they are, the more suspected algae is in the water.
 
-![](images/ht_color_over_time.jpeg)
+![](images/ht_color_over_time.jpeg){height=60%}
 
 ## Merge Threshold
 

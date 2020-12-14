@@ -82,19 +82,17 @@ see into the water).
 
 ## Data Interpolation (Merging Shift Threshold)
 
-Tried 5 variables
-+/- day merge
-Tried day threshold
+Satellite image data and in situ data were not collected on similar schedules.
+This meant that many observations were lost from both datasets on an inner join.
+To remedy this problem, a procedure was used referred to as a "merge threshold."
+Using a merge threshold, the in situ data was shifted forward and backward $0,
+1, \cdots, n$ days. For example, on a merge threshold of two, the in situ data
+from any single observation on day $k$ would be used on day $k - 2, k - 1, k, k
++ 1$, and $k + 2$. In other words, the data from any single in situ observation
+  would be used for the surrounding four days. The merge threshold procedure was
+  done up to ten days of threshold. 
 
-The in situ data was not collected as frequently as the satellite imagery data.
-To remedy this, an experimental approach was taken in which the FIXME data
-was shifted by a certain number of days forward and backward. Intuitively, algae
-blooms do not drastically alter the characteristics of a lake between consecutive days.
-Interpolating surrounding observations with existing data allowed for many more
-of the satellite observations to be used, even though there was no in situ data
-accompanying the observations. 
-
-However, the aforementioned Interpolating approach certainly fails after a
+However, the aforementioned approach certainly fails after a
 certain range of days. The optimal shift was determined experimentally: Each
 model was fit using data shifted from one to ten days in either direction, and
 the cross-validation error was used to assess model accuracy. The specifics of
@@ -128,21 +126,35 @@ geographic location at a certain time. This makes the class of linear models
 unsuitable for this problem. Linear models make assumptions about the structure
 of the errors in the data generating process that are violated by spatiotemporal
 data. Spatiotemporal data has errors which are correlated; as observations
-closer in space or time will covary (CITE). 
+closer in space or time will covary.
 
-To work around the issue of violated assumptions in classical statistical
-models, we opted to use three variants of non-parametric, tree based regression
-models. The models used were Random Forest, Gradient Boosting and XGBoost. These
-models do not make assumptions about the structure of errors and correlations in
-the data, meaning spatiotemporal data is usable.
+The models selected were tree-based: Random Forest, Boosted Trees, and XGBoost. Although
+the classical formulation of Random Forests and Boosted Trees rely on the
+assumption of independent and identically distributed observations, tree-based
+models were chosen in hopes that the extra flexibility in these models would
+help account for the temporal structure in the data. Unfortunately, there was no
+explicit spatial variable that could be included in the data to account for
+spatial dependence.
 
-TODO Describe each model?
+The Random Forest and Bosted Tree implementation from `scikit-learn` were used.
+The XGBoost implementation was taken from the Python package `xgboost`.
 
 
 ## Model Selection
 
-Train/test split? ($\frac{1}{3}$ was held out)
-Experimental variables were compared using 5-fold cross validation
+The chosen models were fit on a grid of parameters. The parameters altered were
+merge threshold, variable subset, and type of model. That is, we fit every
+possible combination of merge threshold from $0, \cdots, 10$, the selected
+variable subsets, and the selected model types. 
+
+Within each of the aforementioned combinations, a training set and test set were
+created from the merged data, with the training set compromising two-thirds of
+the dataset, and the test set compromising one-third of the dataset.  
+
+After a training and test set were created, $5$-fold cross-validation was
+performed. Models were compared via $5$-fold cross validation error on the
+training dataset. The final model was selected via this error, and then results
+were repoted on the test data set.
 
 
 # Results

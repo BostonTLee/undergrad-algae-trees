@@ -42,33 +42,10 @@ tap, the quality of the water as it reaches the water treatment plant is very
 important regarding the cost to treat the water for municipal use, and algal 
 blooms impact the quality of the water dramatically(Brookes). Most municipal water is 
 monitored, but not all of the data is publicly available and some isn’t 
-monitored in situ - otherwise known as collected by hand. However, Landsat is a
-series of satellites that image the Earth surface, in repeated intervals of 14 
-days; that is to say Fort Collins gets re-imaged every 14 days. Landsat 5 dates
-back to 1984, and is no longer taking images, while landsat 7 (1999) and landsat
-8 (2013) still record images today. The landsat imagery allows for a larger 
-sample of data to look at the trends of algal blooms in Colorado, in comparison 
-to the lack of public in situ data available. Figure 1 shows reservoirs - only 
-those greater than 0.01 km² -  that have both in situ and satellite imagery in 
-blue, while the reservoirs in red indicate the reservoirs with just the landsat 
-imagery available. It is easy to see the lack of reservoir data we have 
-available to us, which is why utilizing machine learning to try and predict 
-algae blooms from just remotely sensed imagery would be an incredibly useful
-method of determining water quality in reservoirs. It has been done previously,
-but mainly utilizing only the blue and green wavelengths, despite there being more
-potential options(Sachidananda).
+monitored in situ - otherwise known as collected by hand. 
 
-![](images/map.jpeg)
-
-![](images/HT_Climatology.jpeg)
-
-![](images/ht_color_over_time.jpeg)
-
-
-# Methods
-
-The data came from two sources; satellite data and in situ data from public
-sources. The satellite data was downloaded utilizing Google Earth Engine, which
+We will use two distinct datasets: satellite data and in situ data from public
+sources. The satellite data were downloaded from Google Earth Engine, which
 downloaded the data for individual lakes, ignoring images that were over a
 threshold of cloud cover. This threshold was because cloud cover would darken
 the pixels, skewing the data. The satellite data included all of Landsat 5, 7,
@@ -76,8 +53,40 @@ and 8 from the past 35 year and has the different band (wavelength) data for the
 center most pixel of each lake. The in situ data includes all public data that
 is available for chlorophyll in Colorado. This includes data from sources like
 Denver Water, the USGS, and Northern Water. The data that is being utilized is
-chlorophyll values, and the data also includes secchi depth (how deep you can
-see into the water). 
+chlorophyll values, which act as a proxy for algae blooms. 
+
+![Observed and unobserved lakes in Colorado. \label{map}](images/map.jpeg)
+
+Landsat is a series of satellites that image the Earth surface, in repeated 
+intervals of 14  days; that is to say an individual location such as Fort Collins gets
+re-imaged every 14 days. Landsat 5 dates back to 1984, and is no longer taking images,
+while landsat 7 (1999) and landsat 8 (2013) still record images today. The landsat
+imagery allows for a larger sample of data to look at the trends of algal blooms in
+Colorado, in comparison to the lack of public in situ data available. \ref{fig:map}
+shows reservoirs - only those greater than 0.01 km² -  that have both in situ and
+satellite imagery in blue, while the reservoirs in red indicate the reservoirs with 
+just the landsat imagery available. It is easy to see the lack of reservoir data we have 
+available to us, which is why utilizing machine learning to try and predict 
+algae blooms from just remotely sensed imagery would be an incredibly useful
+method of determining water quality in reservoirs. It has been done previously,
+but mainly utilizing only the blue and green wavelengths, despite there being more
+potential options(Sachidananda).
+
+![Color (dominant wavelength) distributions for Horsetooth Reservoir in each month. \label{climatology}](images/HT_Climatology.jpeg){width=75%}
+
+![Color (dominant wavelength) of Horsetooth Reservoir over time. \label{color-trend}](images/ht_color_over_time.jpeg){width=75%}
+
+We attempted to detect algae blooms from satellite images by using statistical learning
+methods to approximate the relationship between features in satellite images and in situ
+chlorophyll measurements from various lakes in Colorado (predominantly municipal water
+sources such as Horsetooth Reservoir). We reduced the satellite images to a set of
+key features that are likely to be associated with algae blooms; red, green, and blue
+wavelength range measurements, dominant wavelength, and various infrared range measurements.
+We joined these data to in situ chlorophyll measurements and fit various non-parametric
+models before finally producing chlorophyll estimates for all available satellite images.
+
+
+# Methods
 
 
 ## Data Interpolation (Merging Shift Threshold)
@@ -85,12 +94,13 @@ see into the water).
 Satellite image data and in situ data were not collected on similar schedules.
 This meant that many observations were lost from both datasets on an inner join.
 To remedy this problem, a procedure was used referred to as a "merge threshold."
-Using a merge threshold, the in situ data was shifted forward and backward $0,
+Using a merge threshold, the satellite data were shifted forward and backward $0,
 1, \cdots, n$ days. For example, on a merge threshold of two, the in situ data
 from any single observation on day $k$ would be used on day $k - 2, k - 1, k, k
 + 1$, and $k + 2$. In other words, the data from any single in situ observation
-  would be used for the surrounding four days. The merge threshold procedure was
-  done up to ten days of threshold. 
+would be used for the surrounding four days, but each in situ observation would
+only be included once. The merge threshold procedure was done up to ten days of
+threshold. 
 
 However, the aforementioned approach certainly fails after a
 certain range of days. The optimal shift was determined experimentally: Each
@@ -125,18 +135,16 @@ The algae bloom data is spatiotemporal; the blooms are recorded in a certain
 geographic location at a certain time. This makes the class of linear models
 unsuitable for this problem. Linear models make assumptions about the structure
 of the errors in the data generating process that are violated by spatiotemporal
-data. Spatiotemporal data has errors which are correlated; as observations
-closer in space or time will covary.
+data. Spatiotemporal data have errors which are correlated; as observations
+closer in space or time will vary together.
 
 The models selected were tree-based: Random Forest, Boosted Trees, and XGBoost. Although
 the classical formulation of Random Forests and Boosted Trees rely on the
 assumption of independent and identically distributed observations, tree-based
 models were chosen in hopes that the extra flexibility in these models would
-help account for the temporal structure in the data. Unfortunately, there was no
-explicit spatial variable that could be included in the data to account for
-spatial dependence.
+help account for the temporal structure in the data. 
 
-The Random Forest and Bosted Tree implementation from `scikit-learn` were used.
+The Random Forest and Boosted Tree implementation from `scikit-learn` were used.
 The XGBoost implementation was taken from the Python package `xgboost`.
 
 
@@ -154,7 +162,7 @@ the dataset, and the test set compromising one-third of the dataset.
 After a training and test set were created, $5$-fold cross-validation was
 performed. Models were compared via $5$-fold cross validation error on the
 training dataset. The final model was selected via this error, and then results
-were repoted on the test data set.
+were reported on the test data set.
 
 
 # Results
@@ -204,7 +212,7 @@ test set MSE of approximately 1.09.
 
 ## Predicted Values
 
-Finally, we generate chlorophyll estimates for each of the available satellite images,
+Finally, we generated chlorophyll estimates for each of the available satellite images,
 including satellite images of lakes for which there is no available in situ data.
 \ref{fig:predicted-values} Shows the estimated chlorophyll value against the dominant
 wavelength of the satellite image. We can see that the highest chlorophyll estimates
@@ -246,7 +254,9 @@ previously, only measurements from municipal water sources were available.
 In future exploration, we hope to address the extreme predicted values by removing observations with a
 chlorophyll concentration exceeding $15 \frac{\mu g}{mL}$. We expect this change to result in a much
 more reasonable range of predicted values. We also think that, based on the importance of the lake area
-feature, the inclusion of a feature describing lake elevation will be important 
+feature, the inclusion of a feature describing lake elevation will be important. Lastly, although we
+included indicators for month to account for variance in time, we wish to repeat the analysis including
+spatial features such as latitude and longitude to account for variance in space.
 
 
 ## Sources
